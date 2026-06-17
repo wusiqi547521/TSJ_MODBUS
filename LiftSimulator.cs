@@ -60,7 +60,9 @@ namespace TSJ_Modbus
                 Online = true,
                 Idle = true,
                 CurrentLayer = cfg.StartFloor,
-                ResistanceState = ZhiKuLiftResistanceStates.Raised,
+                // 电阻挡恒"落下"：WCS 在车进/出平台前会校验电阻挡=落下才发车。模拟器不模拟"行程中升起防滑"
+                // 的物理，保持落下即可让进梯/出梯两道闸都通过（真机是到层落下，行为一致）。
+                ResistanceState = ZhiKuLiftResistanceStates.Lowered,
                 RunState = ZhiKuLiftRunStates.Stopped,
                 InPosition = true,
                 PalletType = 1
