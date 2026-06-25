@@ -110,8 +110,11 @@ namespace TSJ_Modbus
                 // —— 99 释放 ——
                 Check(GateClear(u), "下发前门控通过(99)");
                 await WriteTask(new ZhiKuLiftDownlink { TaskNo = 3, ActionType = ZhiKuLiftActionCodes.Release, TargetLayer = 3 });
-                u = await WaitUntil(x => x.TaskNo == 3 && x.TaskState == ZhiKuLiftTaskStates.Done, 5000, "99 完成");
-                Check(u.Idle, $"99 完成后空闲={u.Idle}");
+                u = await WaitUntil(x => x.ReceivedTaskNo == 3, 3000, "99 接收反馈=3");
+                Check(true, $"99 已接收（接收反馈={u.ReceivedTaskNo}）");
+                // 99 完成 = 任务号清零(→0) + 任务状态清零；不是状态==2。先接收反馈==3(Accepted) 再看清零,排除误判。
+                u = await WaitUntil(x => x.TaskNo == 0 && x.TaskState == ZhiKuLiftTaskStates.NotDone, 5000, "99 完成(任务号清零)");
+                Check(u.Idle, $"99 完成后 任务号={u.TaskNo} 状态={u.TaskState} 空闲={u.Idle}");
             }
             catch (Exception ex)
             {

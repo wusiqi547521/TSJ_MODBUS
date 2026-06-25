@@ -244,11 +244,24 @@ namespace TSJ_Modbus
             if (actionDoneUtc.HasValue && now < actionDoneUtc.Value)
                 return;
 
-            state.TaskState = ZhiKuLiftTaskStates.Done;
+            // 99(释放)：清 任务号→0、任务状态→0(未完成)（真机口径，发99做清除）；接收任务反馈(回显)保持不清。
+            // 普通动作(取放/进出/移动)：任务状态=2(已完成)、任务号保持。
+            // WCS 据此判完成：普通=任务号==发的 && 状态2；99=任务号==0(已先经接收反馈校验为 Accepted)。
+            int doneTaskNo = state.TaskNo;
+            bool isRelease = state.ActionType == ZhiKuLiftActionCodes.Release;
+            if (isRelease)
+            {
+                state.TaskNo = 0;
+                state.TaskState = ZhiKuLiftTaskStates.NotDone;
+            }
+            else
+            {
+                state.TaskState = ZhiKuLiftTaskStates.Done;
+            }
             state.Idle = true;
             arriveAtUtc = null;
             actionDoneUtc = null;
-            Console.WriteLine($"[{cfg.Name}] ✔ 任务 {state.TaskNo} 完成（动作={state.ActionType}/{ActionName(state.ActionType)} 当前层={state.CurrentLayer}）");
+            Console.WriteLine($"[{cfg.Name}] ✔ 任务 {doneTaskNo} 完成（动作={state.ActionType}/{ActionName(state.ActionType)} 当前层={state.CurrentLayer}）{(isRelease ? " [99 清任务号→0]" : "")}");
         }
 
         private void WriteUplink()
